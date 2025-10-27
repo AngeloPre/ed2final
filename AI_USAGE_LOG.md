@@ -15,7 +15,7 @@ O uso de IA foi permitido para as seguintes finalidades:
 
 ---
 
-## Registro de Interações
+## Registro de Interações TEMPLATE
 
 *Copie e preencha o template abaixo para cada interação relevante.*
 
@@ -53,6 +53,7 @@ O uso de IA foi permitido para as seguintes finalidades:
 - **Referência no Código:** ...
 
 ---
+## Registro de Interações
 
 ### Interação 1
 
@@ -74,7 +75,7 @@ O uso de IA foi permitido para as seguintes finalidades:
   cargo new hello_world --vcs none
 
 - **Análise e Aplicação:**
-  A resposta da IA foi extremamente útil para clarear as opções. Optei por implementar a estratégia de resetar o dicionário. O código fornecido pela IA não foi usado diretamente, pois estava muito simplificado e não se encaixava na minha arquitetura de classes. No entanto, a lógica de verificar o tamanho do dicionário e invocar uma função `reset_dictionary()` foi a base para a minha implementação. Isso me poupou tempo de pesquisa em artigos e livros.
+  Consegui criar o projeto hello world com Rust, rodar, e manter a versão do rustc para todos os membros do projeto
 
 - **Referência no Código:**
-  A lógica inspirada por esta interação foi implementada no arquivo `compressor/lzw.py`, especificamente na função `compress()`, por volta da linha 85.
+  Criou o arquivo `src/main.rs` inicial
