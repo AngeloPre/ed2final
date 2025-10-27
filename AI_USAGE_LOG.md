@@ -53,3 +53,28 @@ O uso de IA foi permitido para as seguintes finalidades:
 - **Referência no Código:** ...
 
 ---
+
+### Interação 1
+
+- **Data:** 27/10/2025
+- **Etapa do Projeto:** 1 - Inicio
+- **Ferramenta de IA Utilizada:** GPT Agent Mode
+- **Objetivo da Consulta:** Não sei usar Rust então vou começar um projeto Hello World que minha equipe possa contribuir com menos esforço de rodar.
+
+- **Prompt(s) Utilizado(s):**
+  1. Aqui fiz algumas perguntas gerais sobre algumas conversas copiadas do whatsapp falando sobre o problema de compressão/busca pra validar se meu pensamento estava correto e alguns nomes das coisas, para ajudar a definir a tecnologia a ser usada entre C++ e Rust.
+  2. "Me entregue uma forma de criar um projeto com Rust para resolver esse problema, eu estou pensando em uma forma facilitada, vou usar o WSL e quero uma solução que facilite a instalação para multiplos usuários estou usando uma solução em meu projeto angular, usei npm create @angular@19 nomedoprojeto e ele permite que eu use npm run start por exemplo que roda o ng serve etc, e isso facilitou muito para minha equipe gerenciar a versão do angular só tendo um node 19+ instalado no computador, tem alguma coisa com cargo que eu possa instalar no wsl com linha de comando que inicie um projeto rust facilitado pra cooperação entre pessoas codando um projeto juntas? qual boas práticas vocÊ sugere pra que a gente consiga trabalhar em equipe sem ter muitos problemas ao usar Rust? crie um planejamento completo e bem detalhado para iniciantes em Rust fazerem seu primeiro hello world e compartilhar isso entre os demais integrantes sem problemas pra começar a rodar, alguns processos de automação são bem vindos... vou codar no vscode, valeu!"
+
+- **Resumo da Resposta da IA:**
+  Guia para configurar um projeto Rust colaborativo no WSL
+  1. Preparar o ambiente no Windows com WSL...
+  2. Instalar rustup
+  3. Instalar dependências de desenvolvimento
+  4. Criar e compartilhar um projeto Rust
+  cargo new hello_world --vcs none
+
+- **Análise e Aplicação:**
+  A resposta da IA foi extremamente útil para clarear as opções. Optei por implementar a estratégia de resetar o dicionário. O código fornecido pela IA não foi usado diretamente, pois estava muito simplificado e não se encaixava na minha arquitetura de classes. No entanto, a lógica de verificar o tamanho do dicionário e invocar uma função `reset_dictionary()` foi a base para a minha implementação. Isso me poupou tempo de pesquisa em artigos e livros.
+
+- **Referência no Código:**
+  A lógica inspirada por esta interação foi implementada no arquivo `compressor/lzw.py`, especificamente na função `compress()`, por volta da linha 85.

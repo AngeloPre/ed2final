@@ -1,0 +1,28 @@
+# === Rust build artifacts ===
+/target/
+/**/target/
+
+# Cargo package manager
+**/*.rs.bk
+Cargo.lock
+
+# Ignore backups and logs
+*.log
+*.tmp
+*.bak
+*.swp
+
+# Ignore generated files and caches
+**/.fingerprint/
+**/.cargo-lock
+**/.rustc_info.json
+**/.incremental/
+
+# Ignore editor/IDE stuff
+.vscode/
+.idea/
+*.code-workspace
+
+# Ignore system files
+.DS_Store
+Thumbs.db

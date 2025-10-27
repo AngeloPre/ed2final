@@ -1,3 +1,10 @@
+### **Instalar rustup**
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+### **Instalar dependências**
+sudo apt update && sudo apt install build-essential pkg-config libssl-dev
+### **Entrar na pasta ed2 e rodar:**
+cargo run
+
 ### **Especificação de Trabalho Prático: Sistema de Processamento de Arquivos Grandes**
 
 **Objetivo Geral:** Projetar e implementar uma ferramenta de linha de comando
