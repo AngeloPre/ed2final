@@ -7,6 +7,13 @@ rustc --version
 ### **Depois rodar:**
 cargo run
 
+### **Rodar Versão C++**
+cd cpp
+### **Compilar com GCC ou CLANG**
+g++ compress.cpp arvore.cpp -o compress
+### **Executar em um txt**
+./compress teste.txt
+
 ### **Especificação de Trabalho Prático: Sistema de Processamento de Arquivos Grandes**
 
 **Objetivo Geral:** Projetar e implementar uma ferramenta de linha de comando
