@@ -10,11 +10,13 @@ cargo run
 ### **Rodar Versão C++**
 cd cpp
 ### **Compilar com GCC ou CLANG**
-g++ compress.cpp arvore.cpp huffman.cpp bitwriter.cpp bitreader.cpp -o compress
+g++ compress.cpp arvore.cpp huffman.cpp bitwriter.cpp bitreader.cpp kmp.cpp -o compress -O3
 ### **Executar em um txt (compressão)**
 ./compress compactar teste.txt teste.bin
 ### **Executar no arquivo compactado gerado (descompressão)**
 ./compress descompactar teste.bin restaurado.txt
+### **Busca simples em um txt (sem compressão)**
+./compress buscar_simples idiot.txt "idiot"
 
 ### **Especificação de Trabalho Prático: Sistema de Processamento de Arquivos Grandes**
 
