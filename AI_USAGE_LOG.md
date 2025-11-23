@@ -157,3 +157,41 @@ O uso de IA foi permitido para as seguintes finalidades:
     - `escreverTrie`, `lerTrie`, `escreverTexto`;
     - `compactar(...)` e `descompactar(...)`;
     - `main` com comandos `compactar` e `descompactar`.
+
+### Interação 4
+
+- **Data:** 22/11/2025
+- **Etapa do Projeto:** 2 – Busca de Substring em Arquivo Grande
+- **Ferramenta de IA Utilizada:** Claude (Anthropic)
+- **Objetivo da Consulta:**
+  Implementar a funcionalidade de busca de substring em arquivos grandes usando o algoritmo KMP já implementado, com:
+  - Processamento em chunks para arquivos maiores que a memória RAM;
+  - Tratamento de caracteres UTF-8 e valores > 127;
+  - Integração com a interface de linha de comando existente.
+
+- **Descrição do Tipo de Perguntas:**
+  - Como adaptar o KMP existente para processar arquivos em chunks sem perder matches nas bordas;
+  - Diagnóstico e correção de erro std::out_of_range ao processar arquivos com caracteres especiais;
+  - Como lidar com caracteres negativos em C++ quando char é signed por padrão.
+
+- **Resumo da Resposta da IA:**
+  A IA identificou e propôs soluções para:
+  - Processamento em chunks: Implementar overlap entre buffers consecutivos de tamanho pattern_length - 1 para garantir que padrões divididos entre chunks sejam detectados;
+  - Bug de caracteres: O problema principal era que caracteres > 127 eram interpretados como negativos (devido ao char signed), causando índices negativos no DFA. A solução foi:
+    - Mudar o DFA de 128 para 256 posições;
+    - Usar unsigned char na assinatura de stepDFA;
+    - Aplicar duplo cast static_cast<int>(static_cast<unsigned char>(c)) em todos os acessos ao DFA;
+  - Estrutura da busca: Manter o estado do KMP entre caracteres processados (já estava correto no código original), acumular posições encontradas e calcular offsets absolutos no arquivo.
+
+- **Análise e Aplicação:**
+  - Foi implementada a função buscar_simples em compress.cpp com a lógica de chunks e overlap sugerida;
+  - O KMP foi corrigido para suportar 256 caracteres ao invés de apenas 128 ASCII básicos;
+  - A análise sobre o estado persistente do KMP confirmou que a implementação original já permitia detecção de matches sobrepostos;
+  - Foi adicionado #include <vector> em compress.cpp para resolver erro de compilação;
+  - A interface de linha de comando foi estendida com o comando buscar_simples.
+
+- **Referência no Código:**
+  - `cpp/kmp.h` – mudança na assinatura de stepDFA para unsigned char;
+  - `cpp/kmp.cpp` – ajustes no construtor (256 ao invés de 128), initializeDFA com casts corretos, e stepDFA com parâmetro unsigned char;
+  - `cpp/compress.cpp` – implementação da função buscar_simples com processamento em chunks e tratamento de overlap;
+  - `cpp/compress.cpp` – atualização da função main para suportar o comando buscar_simples.
