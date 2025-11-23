@@ -5,6 +5,7 @@ lorem_1GB.txt
 compress.exe
 .history
 lorem.bin
+restaurado.txt
 
 # Cargo package manager
 **/*.rs.bk

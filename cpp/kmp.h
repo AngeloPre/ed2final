@@ -14,7 +14,7 @@ class KMP {
 
         void resetDFA();
 
-        int stepDFA(char c);
+        int stepDFA(unsigned char c);
 
     private:
         int state;
