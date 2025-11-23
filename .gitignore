@@ -1,6 +1,10 @@
 # === Rust build artifacts ===
 /target/
 /**/target/
+lorem_1GB.txt
+compress.exe
+.history
+lorem.bin
 
 # Cargo package manager
 **/*.rs.bk

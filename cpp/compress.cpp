@@ -127,7 +127,7 @@ int compactar(const char* nome_arquivo_entrada,
 
     std::ifstream file(nome_arquivo_entrada, std::ios::binary);
     if (!file) {
-        std::cerr << "Erro: não foi possível abrir arquivo de entrada!\n";
+        std::cerr << "Erro: nao foi possivel abrir arquivo de entrada!\n";
         return 1;
     }
 
@@ -160,7 +160,7 @@ int compactar(const char* nome_arquivo_entrada,
     if (tamanho_original == 0) {
         std::ofstream saida_vazia(nome_arquivo_saida, std::ios::binary);
         if (!saida_vazia) {
-            std::cerr << "Erro: não foi possível abrir arquivo de saída!\n";
+            std::cerr << "Erro: nao foi possivel abrir arquivo de saida!\n";
             return 1;
         }
 
@@ -180,7 +180,7 @@ int compactar(const char* nome_arquivo_entrada,
 
     Arvore* final = gerarTrieHuffman(arvoreHuffman);
     if (!final) {
-        std::cerr << "Erro ao construir árvore de Huffman.\n";
+        std::cerr << "Erro ao construir arvore de Huffman.\n";
         return 1;
     }
 
@@ -192,7 +192,7 @@ int compactar(const char* nome_arquivo_entrada,
     // Abre arquivo de saída e grava cabeçalho (header mínimo)
     std::ofstream outputFile(nome_arquivo_saida, std::ios::binary);
     if (!outputFile) {
-        std::cerr << "Erro: não foi possível abrir arquivo de saída!\n";
+        std::cerr << "Erro: nao foi possivel abrir arquivo de saida!\n";
         return 1;
     }
 
@@ -212,7 +212,7 @@ int compactar(const char* nome_arquivo_entrada,
     // 2ª PASSAGEM: relê arquivo e escreve o texto compactado
     file.open(nome_arquivo_entrada, std::ios::binary);
     if (!file) {
-        std::cerr << "Erro: não foi possível reabrir arquivo de entrada!\n";
+        std::cerr << "Erro: nao foi possivel reabrir arquivo de entrada!\n";
         return 1;
     }
 
@@ -231,7 +231,7 @@ int compactar(const char* nome_arquivo_entrada,
             break;
         }
         if (!file && !file.eof()) {
-            std::cerr << "\nErro de leitura durante compressão.\n";
+            std::cerr << "\nErro de leitura durante compressao.\n";
             return 1;
         }
     }
@@ -249,7 +249,7 @@ int descompactar(const char* nome_arquivo_compactado,
                  const char* nome_arquivo_saida) {
     std::ifstream entrada(nome_arquivo_compactado, std::ios::binary);
     if (!entrada) {
-        std::cerr << "Erro: não foi possível abrir arquivo compactado!\n";
+        std::cerr << "Erro: nao foi possivel abrir arquivo compactado!\n";
         return 1;
     }
 
@@ -266,7 +266,7 @@ int descompactar(const char* nome_arquivo_compactado,
         // Arquivo original vazio -> cria saída vazia e encerra
         std::ofstream saida_vazia(nome_arquivo_saida, std::ios::binary);
         if (!saida_vazia) {
-            std::cerr << "Erro: não foi possível criar arquivo de saída.\n";
+            std::cerr << "Erro: nao foi possivel criar arquivo de saida.\n";
             return 1;
         }
         return 0;
@@ -278,13 +278,13 @@ int descompactar(const char* nome_arquivo_compactado,
     // Reconstrói a árvore de Huffman a partir da trie serializada
     Arvore* raiz = lerTrie(br);
     if (!raiz) {
-        std::cerr << "Erro ao reconstruir a árvore de Huffman.\n";
+        std::cerr << "Erro ao reconstruir a arvore de Huffman.\n";
         return 1;
     }
 
     std::ofstream saida(nome_arquivo_saida, std::ios::binary);
     if (!saida) {
-        std::cerr << "Erro: não foi possível criar arquivo de saída.\n";
+        std::cerr << "Erro: nao foi possivel criar arquivo de saida.\n";
         arv_libera(raiz);
         return 1;
     }
@@ -297,7 +297,7 @@ int descompactar(const char* nome_arquivo_compactado,
     while (bytes_escritos < tamanho_original) {
         int bit = br.lerBit();
         if (bit == -1) {
-            std::cerr << "Fim inesperado de arquivo durante descompactação.\n";
+            std::cerr << "Fim inesperado de arquivo durante descompactacao.\n";
             arv_libera(raiz);
             return 1;
         }
@@ -310,7 +310,7 @@ int descompactar(const char* nome_arquivo_compactado,
         }
 
         if (!atual) {
-            std::cerr << "Caminho inválido na árvore de Huffman.\n";
+            std::cerr << "Caminho invalido na arvore de Huffman.\n";
             arv_libera(raiz);
             return 1;
         }
