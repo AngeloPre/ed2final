@@ -3,10 +3,12 @@
 #include <fstream>
 #include <iostream>
 #include <list>
-#include <ostream>
 #include <string>
 #include "arvore.h"
 #include "huffman.h"
+#include "bitwriter.h"
+#include "bitreader.h"
+#include "compress.h"
 
 using std::size_t;
 
@@ -67,51 +69,6 @@ void gerarCodigos(Arvore* arv, std::string codigos[], std::string codAnterior) {
 
 }
 
-class BitWriter{
-    public:
-        std::ostream &out;
-        unsigned char buffer = 0;
-        int bit_count = 0;
-
-        BitWriter(std::ostream &o) : out(o) {}
-
-        void writeBit(int bit) {
-            // Pega o buffer ex: 0011 faz shift com "<<"
-            // 0000 0011 << 1 = 0000 0110 e o bitwise or coloca o bit no final
-            // 0000 0110 | 0000 0001 = 0111
-            buffer = (buffer << 1) | bit;
-            bit_count++;
-            if (bit_count == 8) {
-                out.put(buffer);
-                buffer = 0;
-                bit_count = 0;
-            }
-        }
-
-        void writeByte(unsigned char b) {
-            if (bit_count == 0) {
-                out.put(b);
-            } else {
-                //Extrai os bits usando shifts e bitwise and
-                //ex: 1100 0000 >> 7 = 0000 0001 & 1 = 1
-                //    1100 0000 >> 5 = 0000 0110 & 1 = 0
-                for (int i = 7; i >=0; i--) {
-                    writeBit((b >> i) & 1);
-                }
-            }
-        }
-
-        void flush() {
-            if (bit_count > 0) {
-                buffer <<= (8 - bit_count);
-                out.put(buffer);
-                buffer = 0;
-                bit_count = 0;
-            }
-        }
-
-};
-
 void escreverTrie(arvore *arv, BitWriter &bw) {
     if (!arv) return;
 
@@ -127,6 +84,28 @@ void escreverTrie(arvore *arv, BitWriter &bw) {
     }
 };
 
+Arvore* lerTrie(BitReader &br) {
+    int bit = br.lerBit();
+    if (bit == -1) {
+        // EOF inesperado
+        return nullptr;
+    }
+
+    if (bit == 1) {
+        // Nó folha: lê 1 byte com o símbolo
+        unsigned char c;
+        if (!br.lerByte(c)) {
+            return nullptr;
+        }
+        return arv_constroi(static_cast<char>(c), nullptr, nullptr);
+    } else {
+        // Nó interno: bit == 0
+        Arvore* esq = lerTrie(br);
+        Arvore* dir = lerTrie(br);
+        return arv_constroi('\0', esq, dir);
+    }
+}
+
 void escreverTexto(std::string codigos[], BitWriter &bw, const char buffer[], size_t length) {
     for (size_t i = 0; i < length; i++) {
         unsigned char byteVal = static_cast<unsigned char>(buffer[i]);
@@ -138,100 +117,235 @@ void escreverTexto(std::string codigos[], BitWriter &bw, const char buffer[], si
     }
 }
 
-int main(int argc, char** argv) {
+int compactar(const char* nome_arquivo_entrada,
+              const char* nome_arquivo_saida) {
     const size_t BUFFER_SIZE = 1024;
     char buffer[BUFFER_SIZE];
 
-    if (argc != 2) {
-        std::cerr << "Passe o nome do arquivo a ser lido!\n";
-        return 1;
-    }
+    // Zera vetor de frequências
+    std::memset(frequencias, 0, sizeof(frequencias));
 
-    std::ifstream file(argv[1], std::ios::binary);
+    std::ifstream file(nome_arquivo_entrada, std::ios::binary);
     if (!file) {
-        std::cerr << "Erro: não foi possível abrir arquivo!\n";
+        std::cerr << "Erro: não foi possível abrir arquivo de entrada!\n";
         return 1;
     }
 
+    std::uint64_t tamanho_original = 0;
+
+    // 1ª PASSAGEM: conta frequências e tamanho_original
     while (true) {
-        // Read up to BUFFER_SIZE bytes
         file.read(buffer, BUFFER_SIZE);
         std::streamsize bytesRead = file.gcount();
 
         if (bytesRead <= 0) {
-            // No more data to read (EOF or error)
             break;
         }
 
-        // Process this chunk of data (here we just write it to stdout)
-        contaFrequencia(frequencias, buffer, bytesRead);
+        contaFrequencia(frequencias, buffer,
+                        static_cast<size_t>(bytesRead));
+        tamanho_original += static_cast<std::uint64_t>(bytesRead);
 
-        // If EOF reached, stop
         if (file.eof()) {
             break;
         }
-
-        // If some other error occurred, handle it
         if (!file && !file.eof()) {
-            std::cerr << "\nError while reading file.\n";
+            std::cerr << "\nErro de leitura no arquivo de entrada.\n";
             return 1;
         }
     }
+    file.close();
 
+    // Arquivo vazio: grava só o cabeçalho mínimo
+    if (tamanho_original == 0) {
+        std::ofstream saida_vazia(nome_arquivo_saida, std::ios::binary);
+        if (!saida_vazia) {
+            std::cerr << "Erro: não foi possível abrir arquivo de saída!\n";
+            return 1;
+        }
+
+        Cabecalho cabecalho{};
+        cabecalho.tamanho_original = 0;
+        cabecalho.tamanho_bloco    = 0;
+        cabecalho.numero_blocos    = 0;
+
+        saida_vazia.write(reinterpret_cast<const char*>(&cabecalho),
+                          sizeof(Cabecalho));
+        return 0;
+    }
+
+    // Constrói árvore de Huffman e códigos
+    arvoreHuffman.clear();
     preencheArvoreInicial(arvoreHuffman, frequencias);
 
-    arvore* final = gerarTrieHuffman(arvoreHuffman);
+    Arvore* final = gerarTrieHuffman(arvoreHuffman);
+    if (!final) {
+        std::cerr << "Erro ao construir árvore de Huffman.\n";
+        return 1;
+    }
 
-    //printTreeHorizontal(final);
-
+    for (int i = 0; i < 256; ++i) {
+        codigos[i].clear();
+    }
     gerarCodigos(final, codigos, "");
 
-    /*for (int i = 0; i < 256; i++) {
-        if (codigos[i].size() != 0){
-            std::cout << static_cast<char>(i) << ", " << "Codigo :" << codigos[i] << '\n';
-        }
-    }*/
+    // Abre arquivo de saída e grava cabeçalho (header mínimo)
+    std::ofstream outputFile(nome_arquivo_saida, std::ios::binary);
+    if (!outputFile) {
+        std::cerr << "Erro: não foi possível abrir arquivo de saída!\n";
+        return 1;
+    }
 
-    std::ofstream outputFile("output");
+    Cabecalho cabecalho{};
+    cabecalho.tamanho_original = tamanho_original;                     // original_size
+    cabecalho.tamanho_bloco    = static_cast<std::uint32_t>(tamanho_original); // block_size (1 bloco = arquivo)
+    cabecalho.numero_blocos    = 1;                                   // num_blocks
+    std::cout << "tamanho original: " << (double)tamanho_original/1024/1024;
+    outputFile.write(reinterpret_cast<const char*>(&cabecalho),
+                     sizeof(Cabecalho));
 
+    // Grava a trie em pré-ordem logo após o cabeçalho
     BitWriter bw(outputFile);
-
     escreverTrie(final, bw);
+    // bw.flush(); // alinha bits que podem sobrar no fianl
 
-    bw.flush();
-
-    std::ifstream file2(argv[1], std::ios::binary);
-    if (!file2) {
-        std::cerr << "Erro: não foi possível abrir arquivo!\n";
+    // 2ª PASSAGEM: relê arquivo e escreve o texto compactado
+    file.open(nome_arquivo_entrada, std::ios::binary);
+    if (!file) {
+        std::cerr << "Erro: não foi possível reabrir arquivo de entrada!\n";
         return 1;
     }
 
     while (true) {
-        // Read up to BUFFER_SIZE bytes
-        file2.read(buffer, BUFFER_SIZE);
-        std::streamsize bytesRead = file2.gcount();
+        file.read(buffer, BUFFER_SIZE);
+        std::streamsize bytesRead = file.gcount();
 
         if (bytesRead <= 0) {
-            // No more data to read (EOF or error)
             break;
         }
 
-        // Process this chunk of data (here we just write it to stdout)
-        escreverTexto(codigos, bw, buffer, bytesRead);
+        escreverTexto(codigos, bw, buffer,
+                      static_cast<size_t>(bytesRead));
 
-        // If EOF reached, stop
-        if (file2.eof()) {
+        if (file.eof()) {
             break;
         }
-
-        // If some other error occurred, handle it
-        if (!file2 && !file2.eof()) {
-            std::cerr << "\nError while reading file.\n";
+        if (!file && !file.eof()) {
+            std::cerr << "\nErro de leitura durante compressão.\n";
             return 1;
         }
     }
 
     bw.flush();
+    file.close();
+    outputFile.close();
+
+    arv_libera(final);
 
     return 0;
+}
+
+int descompactar(const char* nome_arquivo_compactado,
+                 const char* nome_arquivo_saida) {
+    std::ifstream entrada(nome_arquivo_compactado, std::ios::binary);
+    if (!entrada) {
+        std::cerr << "Erro: não foi possível abrir arquivo compactado!\n";
+        return 1;
+    }
+
+    // Lê o cabeçalho para saber o tamanho_original
+    Cabecalho cabecalho{};
+    if (!entrada.read(reinterpret_cast<char*>(&cabecalho),
+                      sizeof(Cabecalho))) {
+        std::cerr << "Erro ao ler cabeçalho do arquivo compactado.\n";
+        return 1;
+    }
+
+    std::uint64_t tamanho_original = cabecalho.tamanho_original;
+    if (tamanho_original == 0) {
+        // Arquivo original vazio -> cria saída vazia e encerra
+        std::ofstream saida_vazia(nome_arquivo_saida, std::ios::binary);
+        if (!saida_vazia) {
+            std::cerr << "Erro: não foi possível criar arquivo de saída.\n";
+            return 1;
+        }
+        return 0;
+    }
+
+    // Configura o BitReader a partir da posição atual do arquivo (logo após o cabeçalho)
+    BitReader br(entrada);
+
+    // Reconstrói a árvore de Huffman a partir da trie serializada
+    Arvore* raiz = lerTrie(br);
+    if (!raiz) {
+        std::cerr << "Erro ao reconstruir a árvore de Huffman.\n";
+        return 1;
+    }
+
+    std::ofstream saida(nome_arquivo_saida, std::ios::binary);
+    if (!saida) {
+        std::cerr << "Erro: não foi possível criar arquivo de saída.\n";
+        arv_libera(raiz);
+        return 1;
+    }
+
+    // Agora lê bits do arquivo comprimido e navega na árvore até reconstruir
+    // exatamente tamanho_original bytes.
+    std::uint64_t bytes_escritos = 0;
+    Arvore* atual = raiz;
+
+    while (bytes_escritos < tamanho_original) {
+        int bit = br.lerBit();
+        if (bit == -1) {
+            std::cerr << "Fim inesperado de arquivo durante descompactação.\n";
+            arv_libera(raiz);
+            return 1;
+        }
+
+        // Caminha na árvore: 0 -> esq, 1 -> dir
+        if (bit == 0) {
+            atual = atual->esq;
+        } else {
+            atual = atual->dir;
+        }
+
+        if (!atual) {
+            std::cerr << "Caminho inválido na árvore de Huffman.\n";
+            arv_libera(raiz);
+            return 1;
+        }
+
+        // Se chegou em folha, temos um símbolo completo
+        if (!atual->esq && !atual->dir) {
+            saida.put(atual->info);
+            ++bytes_escritos;
+            atual = raiz; // volta para a raiz para decodificar o próximo símbolo
+        }
+    }
+
+    arv_libera(raiz);
+    return 0;
+}
+
+int main(int argc, char** argv) {
+    if (argc != 4) {
+        std::cerr << "Uso:\n"
+                  << "  " << argv[0]
+                  << " compactar <arquivo_original> <arquivo_compactado>\n"
+                  << "  " << argv[0]
+                  << " descompactar <arquivo_compactado> <arquivo_saida>\n";
+        return 1;
+    }
+
+    std::string comando = argv[1];
+
+    if (comando == "compactar") {
+        return compactar(argv[2], argv[3]);
+    } else if (comando == "descompactar") {
+        return descompactar(argv[2], argv[3]);
+    } else {
+        std::cerr << "Comando invalido: " << comando << "\n"
+                  << "Use 'compactar' ou 'descompactar'.\n";
+        return 1;
+    }
 }

@@ -10,9 +10,11 @@ cargo run
 ### **Rodar Versão C++**
 cd cpp
 ### **Compilar com GCC ou CLANG**
-g++ compress.cpp arvore.cpp -o compress
-### **Executar em um txt**
-./compress teste.txt
+g++ compress.cpp arvore.cpp huffman.cpp bitwriter.cpp bitreader.cpp -o compress
+### **Executar em um txt (compressão)**
+./compress compactar teste.txt teste.bin
+### **Executar no arquivo compactado gerado (descompressão)**
+./compress descompactar teste.bin restaurado.txt
 
 ### **Especificação de Trabalho Prático: Sistema de Processamento de Arquivos Grandes**
 

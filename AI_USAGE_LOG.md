@@ -57,25 +57,103 @@ O uso de IA foi permitido para as seguintes finalidades:
 
 ### Interação 1
 
-- **Data:** 27/10/2025
-- **Etapa do Projeto:** 1 - Inicio
-- **Ferramenta de IA Utilizada:** GPT Agent Mode
-- **Objetivo da Consulta:** Não sei usar Rust então vou começar um projeto Hello World que minha equipe possa contribuir com menos esforço de rodar.
+- **Data:** 22/11/2025
+- **Etapa do Projeto:** 1 – Entendimento do código base de Huffman
+- **Ferramenta de IA Utilizada:** Ferramenta de IA generativa (ChatGPT)
+- **Objetivo da Consulta:**
+  Compreender melhor o código existente em C++ responsável por:
+  - manipulação de árvores binárias (`arvore.cpp`/`arvore.h`);
+  - construção da árvore de Huffman;
+  - funções de travessia e geração de códigos (strings de 0/1).
 
-- **Prompt(s) Utilizado(s):**
-  1. Aqui fiz algumas perguntas gerais sobre algumas conversas copiadas do whatsapp falando sobre o problema de compressão/busca pra validar se meu pensamento estava correto e alguns nomes das coisas, para ajudar a definir a tecnologia a ser usada entre C++ e Rust.
-  2. "Me entregue uma forma de criar um projeto com Rust para resolver esse problema, eu estou pensando em uma forma facilitada, vou usar o WSL e quero uma solução que facilite a instalação para multiplos usuários estou usando uma solução em meu projeto angular, usei npm create @angular@19 nomedoprojeto e ele permite que eu use npm run start por exemplo que roda o ng serve etc, e isso facilitou muito para minha equipe gerenciar a versão do angular só tendo um node 19+ instalado no computador, tem alguma coisa com cargo que eu possa instalar no wsl com linha de comando que inicie um projeto rust facilitado pra cooperação entre pessoas codando um projeto juntas? qual boas práticas vocÊ sugere pra que a gente consiga trabalhar em equipe sem ter muitos problemas ao usar Rust? crie um planejamento completo e bem detalhado para iniciantes em Rust fazerem seu primeiro hello world e compartilhar isso entre os demais integrantes sem problemas pra começar a rodar, alguns processos de automação são bem vindos... vou codar no vscode, valeu!"
+- **Descrição do Tipo de Perguntas:**
+  - Explicações linha a linha do código de árvore binária e da parte de construção da árvore de Huffman.
+  - Comentários sobre nuances de C++ envolvidas (alocação dinâmica, `std::list`, recursão, ponteiros, etc.).
 
 - **Resumo da Resposta da IA:**
-  Guia para configurar um projeto Rust colaborativo no WSL
-  1. Preparar o ambiente no Windows com WSL...
-  2. Instalar rustup
-  3. Instalar dependências de desenvolvimento
-  4. Criar e compartilhar um projeto Rust
-  cargo new hello_world --vcs none
+  A ferramenta explicou:
+  - Como a estrutura da árvore (`struct arvore`/`typedef Arvore`) é usada para representar os nós, com ponteiros para esquerda e direita.
+  - Como as funções de criação, verificação de árvore vazia e liberação funcionam recursivamente.
+  - Como a lista de nós de Huffman é ordenada por frequência e combinada até restar uma única árvore.
+  - Como a travessia recursiva gera os códigos binários (0 para esquerda, 1 para direita) apenas nos nós folha.
 
 - **Análise e Aplicação:**
-  Consegui criar o projeto hello world com Rust, rodar, e manter a versão do rustc para todos os membros do projeto
+  Essa interação foi usada para:
+  - ENtender a lógica já existente.
+  - Dar segurança para alterar o código
 
 - **Referência no Código:**
-  Criou o arquivo `src/main.rs` inicial
+  - Arquivos: `cpp/arvore.cpp`, `cpp/arvore.h`, `cpp/compress.cpp`
+
+---
+
+### Interação 2
+
+- **Data:** 22/11/2025
+- **Etapa do Projeto:** 1 – Definição do formato do arquivo compactado
+- **Ferramenta de IA Utilizada:** Ferramenta de IA generativa (ChatGPT)
+- **Objetivo da Consulta:**
+  Definir um formato de arquivo para compactação com Huffman, incluindo:
+  - Ideia de um cabeçalho mínimo (tamanho do arquivo original, bloco, número de blocos);
+  - Como representar a árvore de Huffman dentro do arquivo;
+  - Como organizar os dados comprimidos em bits.
+
+- **Descrição do Tipo de Perguntas:**
+  - Perguntas sobre como poderia ser um formato binário para um arquivo contendo header, árvore (trie) e stream de bits.
+  - Dúvidas específicas sobre o papel de campos como `tamanho_original` e `tamanho_bloco` em um cabeçalho.
+
+- **Resumo da Resposta da IA:**
+  A IA sugeriu:
+  - Um cabeçalho mínimo com campos para armazenar o tamanho original do arquivo e parâmetros de bloco (para futuras extensões).
+  - Uma forma de serializar a árvore de Huffman em pré-ordem utilizando um bit para indicar se o nó é interno ou folha, seguido de um byte para o símbolo no caso das folhas.
+  - A importância de registrar `tamanho_original` para que, na descompactação, seja possível saber quando parar de decodificar os bits .
+  - Um formato lógico: `[Cabeçalho] [Trie serializada] [Dados comprimidos em bits]`.
+
+- **Análise e Aplicação:**
+  A partir dessa interação:
+  - Foi adotada a ideia de guardar ao menos o `tamanho_original` no arquivo compactado.
+
+- **Referência no Código:**
+  - `cpp/compress.h` – definição da `struct Cabecalho`.
+  - `cpp/compress.cpp` – uso de `Cabecalho` na função `compactar` para gravar o tamanho original do arquivo.
+
+---
+
+### Interação 3
+
+- **Data:** 22/11/2025
+- **Etapa do Projeto:** 1 – Implementação de bitstream e descompactação + correção de bug
+- **Ferramenta de IA Utilizada:** Ferramenta de IA generativa (ChatGPT)
+- **Objetivo da Consulta:**
+  Implementar:
+  - Escrita e leitura de bits (bitstream) em C++ para os códigos de Huffman;
+  - Serialização e desserialização da árvore de Huffman em arquivo;
+  - Funções de compactação e descompactação com interface de linha de comando.
+  Além disso, depurar um bug onde o texto de teste não estava sendo descompactado corretamente.
+
+- **Descrição do Tipo de Perguntas:**
+  - Pedido de ajuda para criar classes auxiliares para escrita/leitura de bits.
+  - Solicitações para estruturar funções `compactar` e `descompactar` com base no código existente
+  - Descrição do bug de descompactação (saída incorreta) e investigação de possíveis causas relacionadas ao bitstream.
+
+- **Resumo da Resposta da IA:**
+  A IA:
+  - Propôs estruturas de classes para escrita/leitura de bits em C++ (acúmulo de bits em um byte, flush final, leitura bit a bit).
+  - Detalhou a lógica de serializar a árvore com `escreverTrie` e reconstruí-la com uma função simétrica `lerTrie` usando recursão.
+  - Sugeriu o fluxo de `compactar`: duas passagens no arquivo (contagem de frequências e construção da árvore/códigos; depois escrita da trie e dos dados comprimidos).
+  - Sugeriu o fluxo de `descompactar`: ler cabeçalho, reconstruir a árvore com `BitReader`, navegar na árvore com os bits até reconstruir o número correto de bytes.
+  - Identificou um bug principal na descompressão: um `flush()` sendo chamado logo após escrever a trie, inserindo bits de padding que eram depois interpretados como início do texto. A correção foi remover o `flush()` intermediário, mantendo apenas o `flush()` final.
+
+- **Análise e Aplicação:**
+  - O design das classes `BitWriter` e `BitReader` foi inspirado na estrutura sugerida.
+  - As funções `escreverTrie`, `lerTrie`, `escreverTexto`, `compactar` e `descompactar` foram implementadas com base na lógica discutida, sempre revisando manualmente para garantir entendimento de cada passo.
+  - A explicação sobre o bug de padding foi essencial para corrigir a descompressão: após remover o `flush()` logo após a trie, os arquivos de teste passaram a ser restaurados corretamente.
+  - A interface de linha de comando (`compactar` / `descompactar`) foi ajustada conforme a proposta, facilitando o uso e testes.
+
+- **Referência no Código:**
+  - `cpp/bitwriter.h`, `cpp/bitwriter.cpp` – implementação da escrita de bits.
+  - `cpp/bitreader.h`, `cpp/bitreader.cpp` – implementação da leitura de bits.
+  - `cpp/compress.cpp` – funções:
+    - `escreverTrie`, `lerTrie`, `escreverTexto`;
+    - `compactar(...)` e `descompactar(...)`;
+    - `main` com comandos `compactar` e `descompactar`.
