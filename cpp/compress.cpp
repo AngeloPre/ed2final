@@ -4,11 +4,13 @@
 #include <iostream>
 #include <list>
 #include <string>
+#include <vector>
 #include "arvore.h"
 #include "huffman.h"
 #include "bitwriter.h"
 #include "bitreader.h"
 #include "compress.h"
+#include "kmp.h"
 
 using std::size_t;
 
@@ -327,25 +329,114 @@ int descompactar(const char* nome_arquivo_compactado,
     return 0;
 }
 
+int buscar_simples(const char* nome_arquivo, const char* substring) {
+    // Validação
+    if (!substring || strlen(substring) == 0) {
+        std::cerr << "Substring vazia!\n";
+        return 1;
+    }
+    
+    std::string pattern(substring);
+    size_t pattern_len = pattern.length();
+    
+    // Abre o arquivo
+    std::ifstream file(nome_arquivo, std::ios::binary);
+    if (!file) {
+        std::cerr << "Erro: nao foi possivel abrir arquivo!\n";
+        return 1;
+    }
+    
+    // Inicializa o KMP
+    KMP kmp;
+    kmp.initializeDFA(pattern);
+    
+    const size_t BUFFER_SIZE = 4096;
+    char buffer[BUFFER_SIZE];
+    
+    std::vector<size_t> posicoes_encontradas;
+    size_t bytes_lidos_total = 0;
+    
+    // Buffer de overlap para garantir que não perdemos matches na borda
+    std::string overlap;
+    
+    while (true) {
+        file.read(buffer, BUFFER_SIZE);
+        std::streamsize bytesRead = file.gcount();
+        
+        if (bytesRead <= 0) {
+            break;
+        }
+        
+        // Processa overlap do chunk anterior + chunk atual
+        std::string chunk_atual = overlap + std::string(buffer, bytesRead);
+        
+        // Processa cada caractere
+        for (size_t i = 0; i < chunk_atual.length(); i++) {
+            int match_pos = kmp.stepDFA(static_cast<unsigned char>(chunk_atual[i]));
+            
+            if (match_pos != -1) {
+                // Calcula posição absoluta no arquivo
+                // match_pos é relativo ao início do processamento do KMP
+                // Precisamos ajustar para a posição real no arquivo
+                size_t pos_absoluta = match_pos - 1; // -1 porque match_pos é 1-indexed
+                posicoes_encontradas.push_back(pos_absoluta);
+            }
+        }
+        
+        // Prepara overlap para o próximo chunk
+        // Mantém os últimos (pattern_len - 1) caracteres
+        if (!file.eof() && chunk_atual.length() >= pattern_len - 1) {
+            overlap = chunk_atual.substr(chunk_atual.length() - (pattern_len - 1));
+            // Ajusta contador para "descontar" o overlap que será reprocessado
+            bytes_lidos_total += bytesRead - (pattern_len - 1);
+        } else {
+            overlap.clear();
+            bytes_lidos_total += bytesRead;
+        }
+        
+        if (file.eof()) {
+            break;
+        }
+    }
+    
+    file.close();
+    
+    // Imprime resultados
+    if (posicoes_encontradas.empty()) {
+        std::cout << "Substring nao encontrada.\n";
+    } else {
+        std::cout << "Substring encontrada em " << posicoes_encontradas.size() 
+                  << " posicao(oes):\n";
+        for (size_t pos : posicoes_encontradas) {
+            std::cout << "  Posicao (byte): " << pos << "\n";
+        }
+    }
+    
+    return 0;
+}
+
 int main(int argc, char** argv) {
-    if (argc != 4) {
+    if (argc < 3) {
         std::cerr << "Uso:\n"
                   << "  " << argv[0]
                   << " compactar <arquivo_original> <arquivo_compactado>\n"
                   << "  " << argv[0]
-                  << " descompactar <arquivo_compactado> <arquivo_saida>\n";
+                  << " descompactar <arquivo_compactado> <arquivo_saida>\n"
+                  << "  " << argv[0]
+                  << " buscar_simples <arquivo_original> \"<substring>\"\n";
         return 1;
     }
 
     std::string comando = argv[1];
 
-    if (comando == "compactar") {
+    if (comando == "compactar" && argc == 4) {
         return compactar(argv[2], argv[3]);
-    } else if (comando == "descompactar") {
+    } else if (comando == "descompactar" && argc == 4) {
         return descompactar(argv[2], argv[3]);
+    } else if (comando == "buscar_simples" && argc == 4) {
+        return buscar_simples(argv[2], argv[3]);
     } else {
-        std::cerr << "Comando invalido: " << comando << "\n"
-                  << "Use 'compactar' ou 'descompactar'.\n";
+        std::cerr << "Comando inválido ou argumentos incorretos.\n";
         return 1;
     }
 }
