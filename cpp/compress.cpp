@@ -5,12 +5,12 @@
 #include <list>
 #include <string>
 #include <vector>
-#include "arvore.h"
-#include "huffman.h"
-#include "bitwriter.h"
-#include "bitreader.h"
+#include "lib/arvore.h"
+#include "lib/huffman.h"
+#include "lib/bitwriter.h"
+#include "lib/bitreader.h"
+#include "lib/kmp.h"
 #include "compress.h"
-#include "kmp.h"
 
 using std::size_t;
 
@@ -202,7 +202,7 @@ int compactar(const char* nome_arquivo_entrada,
     cabecalho.tamanho_original = tamanho_original;                     // original_size
     cabecalho.tamanho_bloco    = static_cast<std::uint32_t>(tamanho_original); // block_size (1 bloco = arquivo)
     cabecalho.numero_blocos    = 1;                                   // num_blocks
-    std::cout << "tamanho original: " << (double)tamanho_original/1024/1024;
+    //std::cout << "tamanho original: " << (double)tamanho_original/1024/1024;
     outputFile.write(reinterpret_cast<const char*>(&cabecalho),
                      sizeof(Cabecalho));
 
@@ -325,6 +325,8 @@ int descompactar(const char* nome_arquivo_compactado,
         }
     }
 
+    entrada.close();
+    saida.close();
     arv_libera(raiz);
     return 0;
 }
@@ -337,7 +339,6 @@ int buscar_simples(const char* nome_arquivo, const char* substring) {
     }
     
     std::string pattern(substring);
-    size_t pattern_len = pattern.length();
     
     // Abre o arquivo
     std::ifstream file(nome_arquivo, std::ios::binary);
@@ -346,72 +347,125 @@ int buscar_simples(const char* nome_arquivo, const char* substring) {
         return 1;
     }
     
-    // Inicializa o KMP
+    // Inicializa o KMP e as vars
     KMP kmp;
     kmp.initializeDFA(pattern);
+    int count = 0;
     
-    const size_t BUFFER_SIZE = 4096;
+    const size_t BUFFER_SIZE = 1024;
     char buffer[BUFFER_SIZE];
     
-    std::vector<size_t> posicoes_encontradas;
-    size_t bytes_lidos_total = 0;
-    
-    // Buffer de overlap para garantir que não perdemos matches na borda
-    std::string overlap;
-    
-    while (true) {
-        file.read(buffer, BUFFER_SIZE);
+    while (file.read(buffer, BUFFER_SIZE) || file.gcount() > 0) {
         std::streamsize bytesRead = file.gcount();
         
-        if (bytesRead <= 0) {
-            break;
-        }
-        
-        // Processa overlap do chunk anterior + chunk atual
-        std::string chunk_atual = overlap + std::string(buffer, bytesRead);
-        
-        // Processa cada caractere
-        for (size_t i = 0; i < chunk_atual.length(); i++) {
-            int match_pos = kmp.stepDFA(static_cast<unsigned char>(chunk_atual[i]));
+        // Processa cada caractere do chunk
+        std::string chunk = std::string(buffer, bytesRead);
+        for (size_t i = 0; i < chunk.length(); i++) {
+            int match_pos = kmp.stepDFA(static_cast<unsigned char>(chunk[i]));
             
             if (match_pos != -1) {
-                // Calcula posição absoluta no arquivo
-                // match_pos é relativo ao início do processamento do KMP
-                // Precisamos ajustar para a posição real no arquivo
-                size_t pos_absoluta = match_pos - 1; // -1 porque match_pos é 1-indexed
-                posicoes_encontradas.push_back(pos_absoluta);
+                std::cout << "Posicao (byte): " << match_pos << "\n";
+                count++; 
             }
-        }
-        
-        // Prepara overlap para o próximo chunk
-        // Mantém os últimos (pattern_len - 1) caracteres
-        if (!file.eof() && chunk_atual.length() >= pattern_len - 1) {
-            overlap = chunk_atual.substr(chunk_atual.length() - (pattern_len - 1));
-            // Ajusta contador para "descontar" o overlap que será reprocessado
-            bytes_lidos_total += bytesRead - (pattern_len - 1);
-        } else {
-            overlap.clear();
-            bytes_lidos_total += bytesRead;
-        }
-        
-        if (file.eof()) {
-            break;
         }
     }
     
     file.close();
     
-    // Imprime resultados
-    if (posicoes_encontradas.empty()) {
+    if (count == 0) 
         std::cout << "Substring nao encontrada.\n";
-    } else {
-        std::cout << "Substring encontrada em " << posicoes_encontradas.size() 
-                  << " posicao(oes):\n";
-        for (size_t pos : posicoes_encontradas) {
-            std::cout << "  Posicao (byte): " << pos << "\n";
-        }
+    else {
+        std::cout << "Substring encontrada em " << count
+        << " posicao(oes):\n";
     }
     
+    return 0;
+}
+
+int buscar_compactado(const char* nome_arquivo_compactado, const char* substring) {
+    std::ifstream entrada(nome_arquivo_compactado, std::ios::binary);
+    if (!entrada) {
+        std::cerr << "Erro: nao foi possivel abrir arquivo compactado!\n";
+        return 1;
+    }
+
+    // Lê o cabeçalho para saber o tamanho_original
+    Cabecalho cabecalho{};
+    if (!entrada.read(reinterpret_cast<char*>(&cabecalho),
+                      sizeof(Cabecalho))) {
+        std::cerr << "Erro ao ler cabeçalho do arquivo compactado.\n";
+        return 1;
+    }
+
+    std::uint64_t tamanho_original = cabecalho.tamanho_original;
+    if (tamanho_original == 0) {
+        std::cout << "Arquivo vazio" << std::endl;
+        return 0;
+    }
+
+    // Configura o BitReader a partir da posição atual do arquivo (logo após o cabeçalho)
+    BitReader br(entrada);
+
+    // Reconstrói a árvore de Huffman a partir da trie serializada
+    Arvore* raiz = lerTrie(br);
+    if (!raiz) {
+        std::cerr << "Erro ao reconstruir a arvore de Huffman.\n";
+        return 1;
+    }
+
+    //Inicializa KMP para o processamento
+    KMP kmp = KMP();
+    kmp.initializeDFA(substring);
+    int count = 0;
+
+    // Agora lê bits do arquivo comprimido e navega na árvore até reconstruir
+    // exatamente tamanho_original bytes.
+    std::uint64_t bytes_analizados = 0;
+    Arvore* atual = raiz;
+
+    while (bytes_analizados < tamanho_original) {
+        int bit = br.lerBit();
+        if (bit == -1) {
+            std::cerr << "Fim inesperado de arquivo durante descompactacao.\n";
+            arv_libera(raiz);
+            return 1;
+        }
+
+        // Caminha na árvore: 0 -> esq, 1 -> dir
+        if (bit == 0) {
+            atual = atual->esq;
+        } else {
+            atual = atual->dir;
+        }
+
+        if (!atual) {
+            std::cerr << "Caminho invalido na arvore de Huffman.\n";
+            arv_libera(raiz);
+            return 1;
+        }
+
+        // Se chegou em folha, temos um símbolo completo
+        if (!atual->esq && !atual->dir) {
+            int match_pos = kmp.stepDFA(static_cast<unsigned char>(atual->info));
+
+            if (match_pos != -1) {
+                std::cout << "Posicao (byte): " << match_pos << "\n";
+                count++; 
+            }
+            ++bytes_analizados;
+            atual = raiz; // volta para a raiz para decodificar o próximo símbolo
+        }
+    }
+
+    if (count == 0) 
+        std::cout << "Substring nao encontrada.\n";
+    else {
+        std::cout << "Substring encontrada em " << count
+        << " posicao(oes):\n";
+    }
+
+    entrada.close();
+    arv_libera(raiz);
     return 0;
 }
 
@@ -435,6 +489,8 @@ int main(int argc, char** argv) {
         return descompactar(argv[2], argv[3]);
     } else if (comando == "buscar_simples" && argc == 4) {
         return buscar_simples(argv[2], argv[3]);
+    } else if (comando == "buscar_compactado") {
+        return buscar_compactado(argv[2], argv[3]);
     } else {
         std::cerr << "Comando inválido ou argumentos incorretos.\n";
         return 1;

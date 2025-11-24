@@ -32,7 +32,7 @@ void KMP::initializeDFA(std::string substring) {
     DFA.at(static_cast<int>(static_cast<unsigned char>(substring.at(0))))->at(0) = 1;
 
     int X = 0; 
-    for (int j = 1; j < substring.length(); j++) {
+    for (unsigned long j = 1; j < substring.length(); j++) {
         for (int c : dict) 
             DFA.at(c)->at(j) = DFA.at(c)->at(X);
         
