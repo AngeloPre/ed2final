@@ -476,7 +476,9 @@ int main(int argc, char** argv) {
                   << "  " << argv[0]
                   << " descompactar <arquivo_compactado> <arquivo_saida>\n"
                   << "  " << argv[0]
-                  << " buscar_simples <arquivo_original> \"<substring>\"\n";
+                  << " buscar_simples <arquivo_original> \"<substring>\"\n"
+                  << "  " << argv[0]
+                  << " buscar_compactado <arquivo_compactado> \"<substring>\"\n";
         return 1;
     }
 
