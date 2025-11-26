@@ -56,6 +56,62 @@ O uso de IA foi permitido para as seguintes finalidades:
 ## Registro de Interações
 
 ### Interação 1
+- **Data:** 21/11/2025
+- **Etapa do Projeto:** Contrução do script de leitura dos arquivos
+- **Ferramenta de IA Utilizada:** GPT-5.1
+- **Objetivo da Consulta:** Construir programa de leitura dos arquivos
+- **Prompt(s) Utilizado(s):** 
+  - make a simple C++ code that reads from a text file and outputs to a buffer with a fixed size
+  - Can you show me how to handle the case where the file is larger than the buffer and I need to process it piece by piece?
+  - how do i read the buffer get the int value for each byte and store it in this list?
+- **Resumo da Resposta da IA:**
+  A ferramenta gerou o código base que faz a leitura dos arquivos de texto e como acessar esses dados no buffer
+- **Análise e Aplicação:**
+  O codigo gerado foi testado e depois incorporado na leitura do arquivo de texto na aplicação.
+- **Referência no Código:** `compress.cpp` no início da função compactar (linha 123 à 158).
+
+### Interação 2
+
+- **Data:** 21/11/2025
+- **Etapa do Projeto:** Geração da lista de frequências e árvore de huffman
+- **Ferramenta de IA Utilizada:** GPT-5.1
+- **Objetivo da Consulta:** Entender a API das listas do C++ `std::list`
+- **Prompt(s) Utilizado(s):**
+  - make a function that sorts this list, ...
+- **Resumo da Resposta da IA:** Exemplo de aplicação do método sort da lista.
+- **Análise e Aplicação:** Usado quando é necessário ordenar a lista.
+- **Referência no Código:** `huffman.cpp` na função compara_por_tamanho.
+
+### Interação 4
+
+- **Data:** 21/11/2025
+- **Etapa do Projeto:** Geração da árvore de Huffman
+- **Ferramenta de IA Utilizada:** Claude Sonnet 4.5
+- **Objetivo da Consulta:** Gerar função para imprimir a árvore gerada para validação do código
+- **Prompt(s) Utilizado(s):**
+  - make a cpp function that prints this tree vertically in a human readable way in the terminal with all the nodes:
+- **Resumo da Resposta da IA:** A IA gerou o código que faz print de uma árvore em C++.
+- **Análise e Aplicação:** A função foi usada para validar a construção da árvore de huffman.
+- **Referência no Código:** Em `compres.cpp` as funções printTreeHorizontal e printTree
+
+### Interação 5
+
+- **Data:** 21/11/2025
+- **Etapa do Projeto:** Salvar dados gerados em disco
+- **Ferramenta de IA Utilizada:** Claude Sonnet 4.5
+- **Objetivo da Consulta:** Consultar como salvar dados gerados (árvore e códigos) em formato binário
+- **Prompt(s) Utilizado(s):** 
+  - how do i convert the sequences in this list in to bit sequences to write down to a file for compression:
+  - how can save my huffman tree for decompression
+- **Resumo da Resposta da IA:** 
+  A IA explicou como salvar os códigos gerados que estavam em strings do tipo '010' em binário para salvar no arquivo e sugeriu percorrer a árvore em ordem salvando 0 em nós normais e 1 em nós folha para a recuperação posterior dos dados.
+- **Análise e Aplicação:**
+  O código gerado para salvar dados binários foi entendido e incorporado na aplicação bem como a estratégia de salvar a árvore em orderm.
+- **Referência no Código:**
+  A lógica de escrita implementada na classe `BitWriter` com as funções `writeBit`, `writeByte` e `flush`. A lógica de percorrer a árvore está em `compress.cpp` na função `escreverTrie`.
+  
+
+### Interação 6
 
 - **Data:** 22/11/2025
 - **Etapa do Projeto:** 1 – Entendimento do código base de Huffman
@@ -87,7 +143,7 @@ O uso de IA foi permitido para as seguintes finalidades:
 
 ---
 
-### Interação 2
+### Interação 7
 
 - **Data:** 22/11/2025
 - **Etapa do Projeto:** 1 – Definição do formato do arquivo compactado
@@ -119,7 +175,7 @@ O uso de IA foi permitido para as seguintes finalidades:
 
 ---
 
-### Interação 3
+### Interação 8
 
 - **Data:** 22/11/2025
 - **Etapa do Projeto:** 1 – Implementação de bitstream e descompactação + correção de bug
@@ -158,7 +214,37 @@ O uso de IA foi permitido para as seguintes finalidades:
     - `compactar(...)` e `descompactar(...)`;
     - `main` com comandos `compactar` e `descompactar`.
 
-### Interação 4
+### Interação 9
+
+- **Data:** 22/11/2025
+- **Etapa do Projeto:** Teste de compactação em arquivos grandes
+- **Ferramenta de IA Utilizada:** GPT-5.1
+- **Objetivo da Consulta:** Obter um script que gera um arquivo de texto grande para teste de compressão
+- **Prompt(s) Utilizado(s):** make a script that writes a 1GB lorem ipsolum in a txt file
+- **Resumo da Resposta da IA:** A IA gerou um script python que gera um arquivo txt estilo lorem ipsolum para testes.
+- **Análise e Aplicação:** O código foi analisado e incorporado no projeto.
+- **Referência no Código:** Arquivo `generate_file.py`
+
+### Interação 10
+
+- **Data:** 22/11/2025
+- **Etapa do Projeto:** Debug do algoritmo KMP e otimizações
+- **Ferramenta de IA Utilizada:** Claude Sonnet 4.5
+- **Objetivo da Consulta:** Validar a implementação do KMP e otimizar a execução do algoritmo.
+- **Prompt(s) Utilizado(s):** 
+  - does this DFA creation work?
+  - How should I implement the resetDFA() method to properly clean up memory?
+  - i added the position and state, does this DFA continue working after finding the first substring or do i need to add another line to matrix?
+  - couldn’t i just add another line to the DFA such that the automaton finds “string ending with my substring”
+  - i got an error for my test, ...
+- **Resumo da Resposta da IA:**
+  A IA validou e corrigiu pequenos bugs de sintaxe da implementção do DFA além de auxiliar na implementação da função de limpesa de memória. Depois auxiliou a expandir o DFA como foi estudado em outros materiais em que o DFA pode continuar rodando sem reset. Por fim corrigiu um bug na criação do dicionário a partir da substring.
+- **Análise e Aplicação:** 
+  A IA ajudou no refino do código do DFA e ajudou a corrigir bugs.
+- **Referência no Código:** 
+  Na classe `KMP` no arquivo `KMP.cpp` ajudou a corrigir bugs no laço da linha 24 o método `resetDFA` e o laço da linha 43.
+
+### Interação 10
 
 - **Data:** 22/11/2025
 - **Etapa do Projeto:** 2 – Busca de Substring em Arquivo Grande
@@ -195,3 +281,13 @@ O uso de IA foi permitido para as seguintes finalidades:
   - `cpp/kmp.cpp` – ajustes no construtor (256 ao invés de 128), initializeDFA com casts corretos, e stepDFA com parâmetro unsigned char;
   - `cpp/compress.cpp` – implementação da função buscar_simples com processamento em chunks e tratamento de overlap;
   - `cpp/compress.cpp` – atualização da função main para suportar o comando buscar_simples.
+
+- **Data:** 23/11/2025
+- **Etapa do Projeto:** Configurações de compilação para a versão final
+- **Ferramenta de IA Utilizada:** GPT-5.1
+- **Objetivo da Consulta:** Gerar um makefile para compilação do projeto
+- **Prompt(s) Utilizado(s):** 
+  make a simple makefile for compiliing compress.cpp, i put the other files under the lib folder, how do i set the VSCode IDE and clang/g++ to import the header files correcly?
+- **Resumo da Resposta da IA:** A IA explicou como configurar o VSCode para lidar com os imports e gerou um makefile para facilitar na compilação do projeto.
+- **Análise e Aplicação:** O código foi testado e implementado no workflow.
+- **Referência no Código:** Arquivo `makefile`

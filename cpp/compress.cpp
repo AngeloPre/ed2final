@@ -4,7 +4,6 @@
 #include <iostream>
 #include <list>
 #include <string>
-#include <vector>
 #include "lib/arvore.h"
 #include "lib/huffman.h"
 #include "lib/bitwriter.h"
